@@ -1,4 +1,10 @@
 import socket
+import sys
+
+if len(sys.argv)>1:
+    cel=sys.argv[1]
+else:
+    cel="127.0.0.1"
 
 def skanuj_port(cel_ip, port):
     s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -16,7 +22,7 @@ def skanuj_port(cel_ip, port):
             try:
                 baner=s.recv(1024)
             except socket.timeout:
-                baner="b"
+                baner=b""
             
         tekst=baner.decode("utf-8", errors="ignore").strip()
         if tekst:
@@ -25,12 +31,18 @@ def skanuj_port(cel_ip, port):
         for linia in tekst.splitlines():
             if linia.lower().startswith("server:"):
                 print(f"Wykryty baner: {linia}")
-    except (ConnectionRefusedError, socket.timeout):
-        pass
+    except ConnectionRefusedError:
+        print(f"[-] Port {port}: zamkniety (polaczenie odrzucone)")
+    except socket.timeout:
+        print(f"[-] Port {port}: brak odpowiedzi (timeout)")
+    except OSError as e:
+        print(f"[-] Port {port}: blad sieci ({e})")
     finally:
         s.close()
-cel="127.0.0.1"
-porty_do_sprawdzenia=[21,22,80,443,8000,8080]
+if len(sys.argv) > 2:
+    porty_do_sprawdzenia = [int(sys.argv[2])]
+else:
+    porty_do_sprawdzenia = [21, 22, 80, 443, 8000, 8080]
 print(f"[*] Rozpoczynam skanowanie {cel}...")
 for p in porty_do_sprawdzenia:
     skanuj_port(cel,p)
